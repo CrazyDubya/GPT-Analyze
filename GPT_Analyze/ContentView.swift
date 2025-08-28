@@ -33,19 +33,23 @@ class GPTAnalyzer {
 
             print("Messages extracted successfully")
 
-            // Filter out non-text messages
-            let textMessages = messages.filter { $0 is String }
-            let allText = textMessages.joined(separator: " ")
+            // Build allText from messages (already [String])
+            let allText = messages.joined(separator: " ")
 
-            print("Non-text messages filtered out")
+            print("Messages ready for tokenization")
 
-            // Tokenize the text by words, converting to lowercase
+            // Tokenize the text by words, converting to lowercase and filtering
             let tokenizer = NLTokenizer(unit: .word)
             tokenizer.string = allText
             var words: [String] = []
             tokenizer.enumerateTokens(in: allText.startIndex..<allText.endIndex) { tokenRange, _ in
                 let word = String(allText[tokenRange]).lowercased()
-                words.append(word)
+                // Trim punctuation and whitespace
+                let trimmedWord = word.trimmingCharacters(in: .punctuationCharacters.union(.whitespacesAndNewlines))
+                // Only keep tokens that contain at least one letter and are not empty
+                if !trimmedWord.isEmpty && trimmedWord.rangeOfCharacter(from: .letters) != nil {
+                    words.append(trimmedWord)
+                }
                 return true
             }
 
@@ -53,7 +57,7 @@ class GPTAnalyzer {
 
             // Count the frequency of each word
             let wordCounts = NSCountedSet(array: words)
-            let totalWords = wordCounts.count
+            let totalWords = words.count
 
             // Get the most common words
             let sortedWords = wordCounts.allObjects.compactMap { $0 as? String }.sorted { wordCounts.count(for: $0) > wordCounts.count(for: $1) }
@@ -99,7 +103,7 @@ class GPTAnalyzer {
 
             // Count the frequency of each word (without stop words)
             let filteredWordCounts = NSCountedSet(array: filteredWords)
-            let filteredTotalWords = filteredWordCounts.count
+            let filteredTotalWords = filteredWords.count
 
             // Display the most common words with percentages (without stop words)
             print("Most common words (without stop words):")
